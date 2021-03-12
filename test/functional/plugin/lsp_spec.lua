@@ -21,14 +21,16 @@ local isCI = helpers.isCI
 
 -- Use these to get access to a coroutine so that I can run async tests and use
 -- yield.
-local run, stop = helpers.run, helpers.stop
+local stop = helpers.stop
 
 -- TODO(justinmk): hangs on Windows https://github.com/neovim/neovim/pull/11837
 if helpers.pending_win32(pending) then return end
 
 -- Fake LSP server.
-local fake_lsp_code = 'test/functional/fixtures/fake-lsp-server.lua'
-local fake_lsp_logfile = 'Xtest-fake-lsp.log'
+local fake_lsp_server = require('test.functional.plugin.lsp.fake_lsp_server')
+local fake_lsp_logfile = fake_lsp_server.logfile
+local fake_lsp_code = fake_lsp_server.code
+local test_rpc_server = fake_lsp_server.test
 
 teardown(function()
   os.remove(fake_lsp_logfile)
@@ -41,102 +43,6 @@ local function clear_notrace()
     NVIM_LUA_NOTRACK="1";
     VIMRUNTIME=os.getenv"VIMRUNTIME";
   }}
-end
-
-
-local function fake_lsp_server_setup(test_name, timeout_ms, options)
-  exec_lua([=[
-    lsp = require('vim.lsp')
-    local test_name, fixture_filename, logfile, timeout, options = ...
-    TEST_RPC_CLIENT_ID = lsp.start_client {
-      cmd_env = {
-        NVIM_LOG_FILE = logfile;
-        NVIM_LUA_NOTRACK = "1";
-      };
-      cmd = {
-        vim.v.progpath, '-Es', '-u', 'NONE', '--headless',
-        "-c", string.format("lua TEST_NAME = %q", test_name),
-        "-c", string.format("lua TIMEOUT = %d", timeout),
-        "-c", "luafile "..fixture_filename,
-      };
-      handlers = setmetatable({}, {
-        __index = function(t, method)
-          return function(...)
-            return vim.rpcrequest(1, 'handler', ...)
-          end
-        end;
-      });
-      workspace_folders = {{
-          uri = 'file://' .. vim.loop.cwd(),
-          name = 'test_folder',
-      }};
-      on_init = function(client, result)
-        TEST_RPC_CLIENT = client
-        vim.rpcrequest(1, "init", result)
-      end;
-      flags = {
-        allow_incremental_sync = options.allow_incremental_sync or false;
-        debounce_text_changes = options.debounce_text_changes or 0;
-      };
-      on_exit = function(...)
-        vim.rpcnotify(1, "exit", ...)
-      end;
-    }
-  ]=], test_name, fake_lsp_code, fake_lsp_logfile, timeout_ms or 1e3, options or {})
-end
-
-local function test_rpc_server(config)
-  if config.test_name then
-    clear_notrace()
-    fake_lsp_server_setup(config.test_name, config.timeout_ms or 1e3, config.options)
-  end
-  local client = setmetatable({}, {
-    __index = function(_, name)
-      -- Workaround for not being able to yield() inside __index for Lua 5.1 :(
-      -- Otherwise I would just return the value here.
-      return function(...)
-        return exec_lua([=[
-        local name = ...
-        if type(TEST_RPC_CLIENT[name]) == 'function' then
-          return TEST_RPC_CLIENT[name](select(2, ...))
-        else
-          return TEST_RPC_CLIENT[name]
-        end
-        ]=], name, ...)
-      end
-    end;
-  })
-  local code, signal
-  local function on_request(method, args)
-    if method == "init" then
-      if config.on_init then
-        config.on_init(client, unpack(args))
-      end
-      return NIL
-    end
-    if method == 'handler' then
-      if config.on_handler then
-        config.on_handler(unpack(args))
-      end
-    end
-    return NIL
-  end
-  local function on_notify(method, args)
-    if method == 'exit' then
-      code, signal = unpack(args)
-      return stop()
-    end
-  end
-  --  TODO specify timeout?
-  --  run(on_request, on_notify, config.on_setup, 1000)
-  run(on_request, on_notify, config.on_setup)
-  if config.on_exit then
-    config.on_exit(code, signal)
-  end
-  stop()
-  if config.test_name then
-    exec_lua("lsp._vim_exit_handler()")
-  end
 end
 
 describe('LSP', function()
@@ -383,7 +289,7 @@ describe('LSP', function()
       }
     end)
     it('workspace/configuration returns NIL per section if client was started without config.settings', function()
-      fake_lsp_server_setup('workspace/configuration no settings')
+      fake_lsp_server.setup('workspace/configuration no settings')
       eq({ NIL, NIL, }, exec_lua [[
         local result = {
           items = {
