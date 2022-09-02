@@ -176,13 +176,7 @@ describe('decorations providers', function()
       beamtrace = {}
       local function on_do(kind, ...)
         if kind == 'win' or kind == 'spell' then
-          a.nvim_buf_set_extmark(0, ns, 0, 0, {
-            end_row = 2,
-            end_col = 23,
-            spell = true,
-            priority = 20,
-            ephemeral = true
-          })
+          a.nvim_buf_set_extmark(0, ns, 0, 0, { end_row = 2, end_col = 23, spell = true, ephemeral = true })
         end
         table.insert(beamtrace, {kind, ...})
       end
@@ -240,36 +234,6 @@ describe('decorations providers', function()
     {1:~                                       }|
                                             |
     ]]}
-
-    -- spell=false with lower priority doesn't disable spell
-    local ns = meths.create_namespace "spell"
-    local id = helpers.curbufmeths.set_extmark(ns, 0, 0, { priority = 30, end_row = 2, end_col = 23, spell = false })
-
-    screen:expect{grid=[[
-    I am well written text.                 |
-    i am not capitalized.                   |
-    I am a ^speling mistakke.                |
-                                            |
-    {1:~                                       }|
-    {1:~                                       }|
-    {1:~                                       }|
-                                            |
-    ]]}
-
-    -- spell=false with higher priority does disable spell
-    helpers.curbufmeths.set_extmark(ns, 0, 0, { id = id, priority = 10, end_row = 2, end_col = 23, spell = false })
-
-    screen:expect{grid=[[
-    I am well written text.                 |
-    {15:i} am not capitalized.                   |
-    I am a {16:^speling} {16:mistakke}.                |
-                                            |
-    {1:~                                       }|
-    {1:~                                       }|
-    {1:~                                       }|
-                                            |
-    ]]}
-
   end)
 
   it('can predefine highlights', function()
@@ -600,7 +564,7 @@ describe('extmark decorations', function()
       [24] = {bold = true};
       [25] = {background = Screen.colors.LightRed};
       [26] = {background=Screen.colors.DarkGrey, foreground=Screen.colors.LightGrey};
-      [27] = {background = Screen.colors.Plum1};
+      [27] = {foreground = Screen.colors.SlateBlue};
     }
 
     ns = meths.create_namespace 'test'
@@ -723,15 +687,15 @@ end]]
 
     screen:expect{grid=[[
       {5:^for} _,item {5:in} {6:ipairs}(items) {5:do}                    |
-          {5:local} text, hl_id_cell, count {5:=} unpack(item)  |
-          {5:if} hl_id_cell {5:~=} {13:nil} {5:then}                     |
-              hl_id {5:=} hl_id_cell                        |
+          {5:local} text, hl_id_cell, count = unpack(item)  |
+          {5:if} hl_id_cell ~= {13:nil} {5:then}                     |
+              hl_id = hl_id_cell                        |
           {5:end}                                           |
-          {5:for} _ {5:=} {13:1}, (count {5:or} {13:1}) {5:do}                    |
-              {5:local} cell {5:=} line[colpos]                 |
-              cell.text {5:=} text                          |
-              cell.hl_id {5:=} hl_id                        |
-              colpos {5:=} colpos{5:+}{13:1}                         |
+          {5:for} _ = {13:1}, (count {5:or} {13:1}) {5:do}                    |
+              {5:local} cell = line[colpos]                 |
+              cell.text = text                          |
+              cell.hl_id = hl_id                        |
+              colpos = colpos+{13:1}                         |
           {5:end}                                           |
       {5:end}                                               |
       {1:~                                                 }|
@@ -750,15 +714,15 @@ end]]
 
     screen:expect{grid=[[
       {5:^for} _,item {5:in} {6:ipairs}(items) {5:do}                    |
-          {5:l}{8:blen}{7:dy}{10:e}{7:text}{10:h}{7:-}{10:_}{7:here}ell, count {5:=} unpack(item)  |
-          {5:i}{12:c}{11:ombining col}{12:or} {13:nil} {5:then}                     |
+          {5:l}{8:blen}{7:dy}{10:e}{7:text}{10:h}{7:-}{10:_}{7:here}ell, count = unpack(item)  |
+          {5:i}{12:c}{11:ombining color} {13:nil} {5:then}                     |
            {11:replacing color}d_cell                        |
           {5:e}{8:bl}{7:endy}{10: }{7:text}{10: }{7:-}{10: }{7:here}                           |
-          {5:f}{12:co}{11:mbi}{12:n}{11:i}{16:n}{11:g color}t {5:or} {13:1}) {5:do}                    |
+          {5:f}{12:co}{11:mbini}{16:n}{11:g color}t {5:or} {13:1}) {5:do}                    |
            {11:replacing color} line[colpos]                 |
-              cell.text {5:=} text                          |
-              cell.hl_id {5:=} hl_id                        |
-              colpos {5:=} colpos{5:+}{13:1}                         |
+              cell.text = text                          |
+              cell.hl_id = hl_id                        |
+              colpos = colpos+{13:1}                         |
           {5:end}                                           |
       {5:end}                                               |
       {1:~                                                 }|
@@ -769,15 +733,15 @@ end]]
     feed 'V5G'
     screen:expect{grid=[[
       {17:for}{18: _,item }{17:in}{18: }{19:ipairs}{18:(items) }{17:do}                    |
-      {18:    }{17:l}{20:blen}{21:dy}{22:e}{21:text}{22:h}{21:-}{22:_}{21:here}{18:ell, count }{17:=}{18: unpack(item)}  |
-      {18:    }{17:i}{12:c}{11:ombining col}{12:or}{18: }{23:nil}{18: }{17:then}                     |
+      {18:    }{17:l}{20:blen}{21:dy}{22:e}{21:text}{22:h}{21:-}{22:_}{21:here}{18:ell, count = unpack(item)}  |
+      {18:    }{17:i}{12:c}{11:ombining color}{18: }{23:nil}{18: }{17:then}                     |
       {18:     }{11:replacing color}{18:d_cell}                        |
       {18:    }{5:^e}{17:nd}                                           |
-          {5:f}{12:co}{11:mbi}{12:n}{11:i}{16:n}{11:g color}t {5:or} {13:1}) {5:do}                    |
+          {5:f}{12:co}{11:mbini}{16:n}{11:g color}t {5:or} {13:1}) {5:do}                    |
            {11:replacing color} line[colpos]                 |
-              cell.text {5:=} text                          |
-              cell.hl_id {5:=} hl_id                        |
-              colpos {5:=} colpos{5:+}{13:1}                         |
+              cell.text = text                          |
+              cell.hl_id = hl_id                        |
+              colpos = colpos+{13:1}                         |
           {5:end}                                           |
       {5:end}                                               |
       {1:~                                                 }|
@@ -788,15 +752,15 @@ end]]
     feed 'jj'
     screen:expect{grid=[[
       {17:for}{18: _,item }{17:in}{18: }{19:ipairs}{18:(items) }{17:do}                    |
-      {18:    }{17:l}{20:blen}{21:dy}{22:e}{21:text}{22:h}{21:-}{22:_}{21:here}{18:ell, count }{17:=}{18: unpack(item)}  |
-      {18:    }{17:i}{12:c}{11:ombining col}{12:or}{18: }{23:nil}{18: }{17:then}                     |
+      {18:    }{17:l}{20:blen}{21:dy}{22:e}{21:text}{22:h}{21:-}{22:_}{21:here}{18:ell, count = unpack(item)}  |
+      {18:    }{17:i}{12:c}{11:ombining color}{18: }{23:nil}{18: }{17:then}                     |
       {18:     }{11:replacing color}{18:d_cell}                        |
       {18:    }{17:end}                                           |
-      {18:    }{17:for}{18: _ }{17:=}{18: }{23:1}{18:, (count }{17:or}{18: }{23:1}{18:) }{17:do}                    |
-      {18:    }^ {18:   }{17:local}{18: cell }{17:=}{18: line[colpos]}                 |
-              cell.text {5:=} text                          |
-              cell.hl_id {5:=} hl_id                        |
-              colpos {5:=} colpos{5:+}{13:1}                         |
+      {18:    }{17:for}{18: _ = }{23:1}{18:, (count }{17:or}{18: }{23:1}{18:) }{17:do}                    |
+      {18:    }^ {18:   }{17:local}{18: cell = line[colpos]}                 |
+              cell.text = text                          |
+              cell.hl_id = hl_id                        |
+              colpos = colpos+{13:1}                         |
           {5:end}                                           |
       {5:end}                                               |
       {1:~                                                 }|
@@ -997,54 +961,84 @@ end]]
       ]])
   end)
 
-  it('avoids redraw issue #20651', function()
-    exec_lua[[
-      vim.cmd.normal'10oXXX'
-      vim.cmd.normal'gg'
-      local ns = vim.api.nvim_create_namespace('ns')
-
-      local bufnr = vim.api.nvim_create_buf(false, true)
-      vim.api.nvim_open_win(bufnr, false, { relative = 'win', height = 1, width = 1, row = 0, col = 0 })
-
-      vim.api.nvim_create_autocmd('CursorMoved', { callback = function()
-        local row = vim.api.nvim_win_get_cursor(0)[1] - 1
-        vim.api.nvim_buf_set_extmark(0, ns, row, 0, { id = 1 })
-        vim.api.nvim_buf_set_lines(bufnr, 0, -1, true, {})
-        vim.schedule(function()
-          vim.api.nvim_buf_set_extmark(0, ns, row, 0, {
-            id = 1,
-            virt_text = {{'HELLO', 'Normal'}},
-          })
-        end)
-      end
-      })
-    ]]
-
-    for _ = 1, 3 do
-      helpers.sleep(10)
-      feed 'j'
-    end
-
+  it('can have virtual text of inline position', function()
+    insert(example_text)
+    feed 'gg'
     screen:expect{grid=[[
-      {27: }                                                 |
-      XXX                                               |
-      XXX                                               |
-      ^XXX HELLO                                         |
-      XXX                                               |
-      XXX                                               |
-      XXX                                               |
-      XXX                                               |
-      XXX                                               |
-      XXX                                               |
-      XXX                                               |
-      {1:~                                                 }|
+      ^for _,item in ipairs(items) do                    |
+          local text, hl_id_cell, count = unpack(item)  |
+          if hl_id_cell ~= nil then                     |
+              hl_id = hl_id_cell                        |
+          end                                           |
+          for _ = 1, (count or 1) do                    |
+              local cell = line[colpos]                 |
+              cell.text = text                          |
+              cell.hl_id = hl_id                        |
+              colpos = colpos+1                         |
+          end                                           |
+      end                                               |
       {1:~                                                 }|
       {1:~                                                 }|
                                                         |
     ]]}
 
-  end)
+    meths.buf_set_extmark(0, ns, 1, 14, {virt_text={{': ', 'Special'}, {'string', 'Type'}}, virt_text_pos='inline'})
+    screen:expect{grid=[[
+      ^for _,item in ipairs(items) do                    |
+          local text{27:: }{3:string}, hl_id_cell, count = unpack|
+      (item)                                            |
+          if hl_id_cell ~= nil then                     |
+              hl_id = hl_id_cell                        |
+          end                                           |
+          for _ = 1, (count or 1) do                    |
+              local cell = line[colpos]                 |
+              cell.text = text                          |
+              cell.hl_id = hl_id                        |
+              colpos = colpos+1                         |
+          end                                           |
+      end                                               |
+      {1:~                                                 }|
+                                                        |
+    ]]}
 
+    screen:try_resize(55, 15)
+    screen:expect{grid=[[
+      ^for _,item in ipairs(items) do                         |
+          local text{27:: }{3:string}, hl_id_cell, count = unpack(item|
+      )                                                      |
+          if hl_id_cell ~= nil then                          |
+              hl_id = hl_id_cell                             |
+          end                                                |
+          for _ = 1, (count or 1) do                         |
+              local cell = line[colpos]                      |
+              cell.text = text                               |
+              cell.hl_id = hl_id                             |
+              colpos = colpos+1                              |
+          end                                                |
+      end                                                    |
+      {1:~                                                      }|
+                                                             |
+    ]]}
+
+    screen:try_resize(56, 15)
+    screen:expect{grid=[[
+      ^for _,item in ipairs(items) do                          |
+          local text{27:: }{3:string}, hl_id_cell, count = unpack(item)|
+          if hl_id_cell ~= nil then                           |
+              hl_id = hl_id_cell                              |
+          end                                                 |
+          for _ = 1, (count or 1) do                          |
+              local cell = line[colpos]                       |
+              cell.text = text                                |
+              cell.hl_id = hl_id                              |
+              colpos = colpos+1                               |
+          end                                                 |
+      end                                                     |
+      {1:~                                                       }|
+      {1:~                                                       }|
+                                                              |
+    ]]}
+  end)
 end)
 
 describe('decorations: virtual lines', function()
@@ -1151,7 +1145,7 @@ if (h->n_buckets < new_n_buckets) { // expand
     ]]}
 
     meths.buf_set_extmark(0, ns, 5, 0, {
-      virt_lines = { {{"^^ REVIEW:", "Todo"}, {" new_vals variable seems unnecessary?", "Comment"}} };
+      virt_lines = { {{"^^ REVIEW:", "Todo"}, {" new_vals variable seems unneccesary?", "Comment"}} };
     })
     -- TODO: what about the cursor??
     screen:expect{grid=[[
@@ -1164,7 +1158,7 @@ if (h->n_buckets < new_n_buckets) { // expand
         if (kh_is_map && val_size) {                    |
           ^char *new_vals = {3:krealloc}( h->vals_buf, new_n_|
       buckets * val_size);                              |
-      {5:^^ REVIEW:}{6: new_vals variable seems unnecessary?}   |
+      {5:^^ REVIEW:}{6: new_vals variable seems unneccesary?}   |
           h->vals_buf = new_vals;                       |
                                                         |
     ]]}
@@ -1364,110 +1358,6 @@ if (h->n_buckets < new_n_buckets) { // expand
       ^}                                                 |
       {1:~                                                 }|
                                                         |
-    ]]}
-  end)
-
-  it('works beyond end of the buffer with virt_lines_above', function()
-    insert(example_text)
-    feed 'G'
-
-    screen:expect{grid=[[
-      if (h->n_buckets < new_n_buckets) { // expand     |
-        khkey_t *new_keys = (khkey_t *)krealloc((void *)|
-      h->keys, new_n_buckets * sizeof(khkey_t));        |
-        h->keys = new_keys;                             |
-        if (kh_is_map && val_size) {                    |
-          char *new_vals = krealloc( h->vals_buf, new_n_|
-      buckets * val_size);                              |
-          h->vals_buf = new_vals;                       |
-        }                                               |
-      ^}                                                 |
-      {1:~                                                 }|
-                                                        |
-    ]]}
-
-    local id = meths.buf_set_extmark(0, ns, 8, 0, {
-      virt_lines={{{"Grugg"}}};
-      virt_lines_above = true,
-    })
-
-    screen:expect{grid=[[
-      if (h->n_buckets < new_n_buckets) { // expand     |
-        khkey_t *new_keys = (khkey_t *)krealloc((void *)|
-      h->keys, new_n_buckets * sizeof(khkey_t));        |
-        h->keys = new_keys;                             |
-        if (kh_is_map && val_size) {                    |
-          char *new_vals = krealloc( h->vals_buf, new_n_|
-      buckets * val_size);                              |
-          h->vals_buf = new_vals;                       |
-        }                                               |
-      ^}                                                 |
-      Grugg                                             |
-                                                        |
-    ]]}
-
-    feed('dd')
-    screen:expect{grid=[[
-      if (h->n_buckets < new_n_buckets) { // expand     |
-        khkey_t *new_keys = (khkey_t *)krealloc((void *)|
-      h->keys, new_n_buckets * sizeof(khkey_t));        |
-        h->keys = new_keys;                             |
-        if (kh_is_map && val_size) {                    |
-          char *new_vals = krealloc( h->vals_buf, new_n_|
-      buckets * val_size);                              |
-          h->vals_buf = new_vals;                       |
-        ^}                                               |
-      Grugg                                             |
-      {1:~                                                 }|
-                                                        |
-    ]]}
-
-    feed('dk')
-    screen:expect{grid=[[
-      if (h->n_buckets < new_n_buckets) { // expand     |
-        khkey_t *new_keys = (khkey_t *)krealloc((void *)|
-      h->keys, new_n_buckets * sizeof(khkey_t));        |
-        h->keys = new_keys;                             |
-        if (kh_is_map && val_size) {                    |
-          ^char *new_vals = krealloc( h->vals_buf, new_n_|
-      buckets * val_size);                              |
-      Grugg                                             |
-      {1:~                                                 }|
-      {1:~                                                 }|
-      {1:~                                                 }|
-                                                        |
-    ]]}
-
-    feed('dgg')
-    screen:expect{grid=[[
-      ^                                                  |
-      Grugg                                             |
-      {1:~                                                 }|
-      {1:~                                                 }|
-      {1:~                                                 }|
-      {1:~                                                 }|
-      {1:~                                                 }|
-      {1:~                                                 }|
-      {1:~                                                 }|
-      {1:~                                                 }|
-      {1:~                                                 }|
-      --No lines in buffer--                            |
-    ]]}
-
-    meths.buf_del_extmark(0, ns, id)
-    screen:expect{grid=[[
-      ^                                                  |
-      {1:~                                                 }|
-      {1:~                                                 }|
-      {1:~                                                 }|
-      {1:~                                                 }|
-      {1:~                                                 }|
-      {1:~                                                 }|
-      {1:~                                                 }|
-      {1:~                                                 }|
-      {1:~                                                 }|
-      {1:~                                                 }|
-      --No lines in buffer--                            |
     ]]}
   end)
 
@@ -1738,38 +1628,6 @@ if (h->n_buckets < new_n_buckets) { // expand
           h->vals_buf = new_vals;                       |
         }                                               |
       }                                                 |
-                                                        |
-    ]]}
-
-    command 'set number'
-    screen:expect{grid=[[
-      {9:  1 }^if (h->n_buckets < new_n_buckets) { // expand |
-      {9:  2 }  khkey_t *new_keys = (khkey_t *)krealloc((voi|
-      {9:    }d *)h->keys, new_n_buckets * sizeof(khkey_t));|
-      {9:    }{1:>>}{2:  very    tabby}text   with    tabs          |
-      {9:  3 }  h->keys = new_keys;                         |
-      {9:  4 }  if (kh_is_map && val_size) {                |
-      {9:  5 }    char *new_vals = krealloc( h->vals_buf, ne|
-      {9:    }w_n_buckets * val_size);                      |
-      {9:  6 }    h->vals_buf = new_vals;                   |
-      {9:  7 }  }                                           |
-      {9:  8 }}                                             |
-                                                        |
-    ]]}
-
-    command 'set tabstop&'
-    screen:expect{grid=[[
-      {9:  1 }^if (h->n_buckets < new_n_buckets) { // expand |
-      {9:  2 }  khkey_t *new_keys = (khkey_t *)krealloc((voi|
-      {9:    }d *)h->keys, new_n_buckets * sizeof(khkey_t));|
-      {9:    }{1:>>}{2:      very    tabby}text       with    tabs  |
-      {9:  3 }  h->keys = new_keys;                         |
-      {9:  4 }  if (kh_is_map && val_size) {                |
-      {9:  5 }    char *new_vals = krealloc( h->vals_buf, ne|
-      {9:    }w_n_buckets * val_size);                      |
-      {9:  6 }    h->vals_buf = new_vals;                   |
-      {9:  7 }  }                                           |
-      {9:  8 }}                                             |
                                                         |
     ]]}
   end)
@@ -2164,41 +2022,6 @@ describe('decorations: virt_text', function()
       {1:4   }hell^o                                         |
       {1:  1 }helloVIRTUAL                                  |
       {3:~                                                 }|
-      {3:~                                                 }|
-      {3:~                                                 }|
-      {3:~                                                 }|
-                                                        |
-    ]]}
-  end)
-
-  it('redraws correctly when re-using extmark ids', function()
-    command 'normal 5ohello'
-
-    screen:expect{grid=[[
-                                                        |
-      hello                                             |
-      hello                                             |
-      hello                                             |
-      hello                                             |
-      hell^o                                             |
-      {3:~                                                 }|
-      {3:~                                                 }|
-      {3:~                                                 }|
-                                                        |
-    ]]}
-
-    local ns = meths.create_namespace('ns')
-    for row = 1, 5 do
-      meths.buf_set_extmark(0, ns, row, 0, { id = 1, virt_text = {{'world', 'Normal'}} })
-    end
-
-    screen:expect{grid=[[
-                                                        |
-      hello                                             |
-      hello                                             |
-      hello                                             |
-      hello                                             |
-      hell^o world                                       |
       {3:~                                                 }|
       {3:~                                                 }|
       {3:~                                                 }|
