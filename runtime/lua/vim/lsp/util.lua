@@ -1723,8 +1723,10 @@ end)
 ---
 ---@param locations table list of `Location`s or `LocationLink`s
 ---@param offset_encoding string offset_encoding for locations utf-8|utf-16|utf-32
+---@param opts (table, optional) 
+---            - sort (boolean) sort the items (default true)
 ---@returns (table) list of items
-function M.locations_to_items(locations, offset_encoding)
+function M.locations_to_items(locations, offset_encoding, opts)
   if offset_encoding == nil then
     vim.notify_once(
       'locations_to_items must be called with valid offset encoding',
@@ -1748,7 +1750,9 @@ function M.locations_to_items(locations, offset_encoding)
   end
 
   local keys = vim.tbl_keys(grouped)
-  table.sort(keys)
+  if opts.sort then
+    table.sort(keys)
+  end
   -- TODO(ashkan) I wish we could do this lazily.
   for _, uri in ipairs(keys) do
     local rows = grouped[uri]
