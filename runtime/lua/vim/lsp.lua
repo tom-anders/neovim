@@ -1540,7 +1540,7 @@ function lsp.start_client(config)
     -- opt-out (deleting the semanticTokensProvider from capabilities)
     vim.schedule(function()
       if vim.tbl_get(client.server_capabilities, 'semanticTokensProvider', 'full') then
-        semantic_tokens.start(bufnr, client.id)
+        -- semantic_tokens.start(bufnr, client.id)
       end
     end)
 
