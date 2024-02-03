@@ -734,6 +734,7 @@ function protocol.make_client_capabilities()
       },
       rangeFormatting = {
         dynamicRegistration = true,
+        rangesSupport = true,
       },
       completion = {
         dynamicRegistration = false,

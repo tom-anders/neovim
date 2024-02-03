@@ -264,6 +264,9 @@ The following new features were added.
   • |vim.lsp.buf.definition()|, |vim.lsp.buf.declaration()|,
     |vim.lsp.buf.type_definition()|, and |vim.lsp.buf.implementation()| now
     support the `loclist` field of |vim.lsp.ListOpts|.
+  • |vim.lsp.buf.format()| now supports passing a list of ranges
+    via the `range` parameter (this requires support for the
+    `textDocument/rangesFormatting` request).
 
 • Lua:
   • |:lua| with a |[range]| executes that range as Lua code, in any buffer.
