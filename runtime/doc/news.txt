@@ -271,6 +271,10 @@ The following new APIs and features were added.
   • |vim.lsp.buf.definition()|, |vim.lsp.buf.declaration()|,
     |vim.lsp.buf.type_definition()|, and |vim.lsp.buf.implementation()| now
     support the `loclist` field of |vim.lsp.ListOpts|.
+  • Add `vim.Diagnostic.related_information` field and fill it with
+    `lsp.DiagnosticRelatedInformation[]`. Deprecate
+    `vim.Diagnostic.user_data.lsp.relatedInformation` in favor of this new
+    field.
 
 • Treesitter
   • Bundled parsers and queries (highlight, folds) for Markdown, Python, and
