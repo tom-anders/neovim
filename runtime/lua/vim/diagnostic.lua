@@ -159,6 +159,19 @@ local M = {}
 --- Overrides the setting from |vim.diagnostic.config()|.
 --- @field format? fun(diagnostic:vim.Diagnostic): string
 ---
+--- Append location and message of each item in  |vim.Diagnostic.related_information| to the
+--- displayed message.
+--- Overrides the setting from |vim.diagnostic.config()|.
+--- (default: `true`)
+--- @field related_information? boolean
+---
+--- A function that takes a related information item as input and returns a string.
+--- The return value is the text appended to the original diagnostics message.
+--- Only used if {related_information} is `true` and {format} is `nil`.
+--- By default, the format is `(filename:line,col): message`.
+--- Overrides the setting from |vim.diagnostic.config()|.
+--- @field format_related_information? fun(diagnostic:vim.diagnostic.RelatedInformation): string
+---
 --- Prefix each diagnostic in the floating window:
 --- - If a `function`, {i} is the index of the diagnostic being evaluated and
 ---   {total} is the total number of diagnostics displayed in the window. The
@@ -489,6 +502,29 @@ local function reformat_diagnostics(format, diagnostics)
   return formatted
 end
 
+--- @param diagnostics vim.Diagnostic[]
+--- @param format fun(diagnostic:vim.diagnostic.RelatedInformation): string
+--- @return vim.Diagnostic[]
+local function add_related_information(diagnostics, format)
+  format = format or function(related_information)
+    local filename = vim.fn.fnamemodify(api.nvim_buf_get_name(related_information.bufnr), ':t')
+    return string.format('%s(%d, %d): %s', filename, related_information.lnum,
+      related_information.col, related_information.message)
+  end
+
+  vim.validate({
+    diagnostics = { diagnostics, 't' },
+    format = { format, 'f' },
+  })
+
+  local diagnostics_with_info = vim.deepcopy(diagnostics, true)
+  for _, diagnostic in ipairs(diagnostics_with_info) do
+    local related_info_messages = vim.iter(diagnostic.related_information or {}):map(format):totable()
+    diagnostic.message = vim.iter({ diagnostic.message, related_info_messages }):flatten():join('\n')
+  end
+  return diagnostics_with_info
+end
+
 --- @param option string
 --- @param namespace integer?
 --- @return table
@@ -608,7 +644,7 @@ local function set_diagnostic_cache(namespace, bufnr, diagnostics)
     assert(diagnostic.lnum, 'Diagnostic line number is required')
     assert(diagnostic.col, 'Diagnostic column is required')
     diagnostic.severity = diagnostic.severity and to_severity(diagnostic.severity)
-      or M.severity.ERROR
+        or M.severity.ERROR
     diagnostic.end_lnum = diagnostic.end_lnum or diagnostic.lnum
     diagnostic.end_col = diagnostic.end_col or diagnostic.col
     diagnostic.namespace = namespace
@@ -656,7 +692,7 @@ local function save_extmarks(namespace, bufnr)
     diagnostic_attached_buffers[bufnr] = true
   end
   diagnostic_cache_extmarks[bufnr][namespace] =
-    api.nvim_buf_get_extmarks(bufnr, namespace, 0, -1, { details = true })
+      api.nvim_buf_get_extmarks(bufnr, namespace, 0, -1, { details = true })
 end
 
 --- @type table<string,true>
@@ -746,26 +782,26 @@ local function get_diagnostics(bufnr, opts, clamp)
   })
 
   local match_severity = opts.severity and severity_predicate(opts.severity)
-    or function(_)
-      return true
-    end
+      or function(_)
+        return true
+      end
 
   ---@param b integer
   ---@param d vim.Diagnostic
   local function add(b, d)
     if
-      match_severity(d)
-      and (not opts.lnum or (opts.lnum >= d.lnum and opts.lnum <= (d.end_lnum or d.lnum)))
+        match_severity(d)
+        and (not opts.lnum or (opts.lnum >= d.lnum and opts.lnum <= (d.end_lnum or d.lnum)))
     then
       if clamp and api.nvim_buf_is_loaded(b) then
         local line_count = buf_line_count[b] - 1
         if
-          d.lnum > line_count
-          or d.end_lnum > line_count
-          or d.lnum < 0
-          or d.end_lnum < 0
-          or d.col < 0
-          or d.end_col < 0
+            d.lnum > line_count
+            or d.end_lnum > line_count
+            or d.lnum < 0
+            or d.end_lnum < 0
+            or d.col < 0
+            or d.end_col < 0
         then
           d = vim.deepcopy(d, true)
           d.lnum = math.max(math.min(d.lnum, line_count), 0)
@@ -915,7 +951,7 @@ local function next_diagnostic(position, search_forward, bufnr, opts, namespace)
       table.sort(line_diagnostics[lnum], sort_diagnostics)
       if i == 0 then
         for _, v in
-          pairs(line_diagnostics[lnum] --[[@as table<string,any>]])
+        pairs(line_diagnostics[lnum] --[[@as table<string,any>]])
         do
           if is_next(v) then
             return v
@@ -1008,7 +1044,7 @@ function M.config(opts, namespace)
   end
 
   for k, v in
-    pairs(opts --[[@as table<any,any>]])
+  pairs(opts --[[@as table<any,any>]])
   do
     t[k] = v
   end
@@ -1291,7 +1327,7 @@ M.handlers.signs = {
     local ns = M.get_namespace(namespace)
     if not ns.user_data.sign_ns then
       ns.user_data.sign_ns =
-        api.nvim_create_namespace(string.format('%s/diagnostic/signs', ns.name))
+          api.nvim_create_namespace(string.format('%s/diagnostic/signs', ns.name))
     end
 
     -- Handle legacy diagnostic sign definitions
@@ -1399,7 +1435,7 @@ M.handlers.underline = {
     local ns = M.get_namespace(namespace)
     if not ns.user_data.underline_ns then
       ns.user_data.underline_ns =
-        api.nvim_create_namespace(string.format('%s/diagnostic/underline', ns.name))
+          api.nvim_create_namespace(string.format('%s/diagnostic/underline', ns.name))
     end
 
     local underline_ns = ns.user_data.underline_ns
@@ -1471,8 +1507,8 @@ M.handlers.virtual_text = {
         diagnostics = reformat_diagnostics(opts.virtual_text.format, diagnostics)
       end
       if
-        opts.virtual_text.source
-        and (opts.virtual_text.source ~= 'if_many' or count_sources(bufnr) > 1)
+          opts.virtual_text.source
+          and (opts.virtual_text.source ~= 'if_many' or count_sources(bufnr) > 1)
       then
         diagnostics = prefix_source(diagnostics)
       end
@@ -1484,7 +1520,7 @@ M.handlers.virtual_text = {
     local ns = M.get_namespace(namespace)
     if not ns.user_data.virt_text_ns then
       ns.user_data.virt_text_ns =
-        api.nvim_create_namespace(string.format('%s/diagnostic/virtual_text', ns.name))
+          api.nvim_create_namespace(string.format('%s/diagnostic/virtual_text', ns.name))
     end
 
     local virt_text_ns = ns.user_data.virt_text_ns
@@ -1775,8 +1811,8 @@ function M.open_float(opts, ...)
     --- @param d vim.Diagnostic
     diagnostics = vim.tbl_filter(function(d)
       return d.lnum == lnum
-        and math.min(d.col, line_length - 1) <= col
-        and (d.end_col >= col or d.end_lnum > lnum)
+          and math.min(d.col, line_length - 1) <= col
+          and (d.end_col >= col or d.end_lnum > lnum)
     end, diagnostics)
   end
 
@@ -1797,7 +1833,7 @@ function M.open_float(opts, ...)
     end
   end
 
-  local lines = {} --- @type string[]
+  local lines = {}      --- @type string[]
   local highlights = {} --- @type table[]
   local header = if_nil(opts.header, 'Diagnostics:')
   if header then
@@ -1822,6 +1858,8 @@ function M.open_float(opts, ...)
 
   if opts.format then
     diagnostics = reformat_diagnostics(opts.format, diagnostics)
+  elseif if_nil(opts.related_information, true) then
+    diagnostics = add_related_information(diagnostics, opts.format_related_information)
   end
 
   if opts.source and (opts.source ~= 'if_many' or count_sources(bufnr) > 1) then
@@ -1829,9 +1867,9 @@ function M.open_float(opts, ...)
   end
 
   local prefix_opt =
-    if_nil(opts.prefix, (scope == 'cursor' and #diagnostics <= 1) and '' or function(_, i)
-      return string.format('%d. ', i)
-    end)
+      if_nil(opts.prefix, (scope == 'cursor' and #diagnostics <= 1) and '' or function(_, i)
+        return string.format('%d. ', i)
+      end)
 
   local prefix, prefix_hl_group --- @type string?, string?
   if prefix_opt then
@@ -2036,8 +2074,8 @@ end
 function M.enable(enable, filter)
   -- Deprecated signature. Drop this in 0.12
   local legacy = (enable or filter)
-    and vim.tbl_contains({ 'number', 'nil' }, type(enable))
-    and vim.tbl_contains({ 'number', 'nil' }, type(filter))
+      and vim.tbl_contains({ 'number', 'nil' }, type(enable))
+      and vim.tbl_contains({ 'number', 'nil' }, type(filter))
 
   if legacy then
     vim.deprecate(
@@ -2073,8 +2111,8 @@ function M.enable(enable, filter)
     if filter.ns_id == nil then
       diagnostic_disabled = (
         enable
-          -- Enable everything by setting diagnostic_disabled to an empty table.
-          and {}
+        -- Enable everything by setting diagnostic_disabled to an empty table.
+        and {}
         -- Disable everything (including as yet non-existing buffers and namespaces) by setting
         -- diagnostic_disabled to an empty table and set its metatable to always return true.
         or setmetatable({}, {
