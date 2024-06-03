@@ -1887,7 +1887,7 @@ function M.locations_to_items(locations, offset_encoding)
     -- locations may be Location or LocationLink
     local uri = d.uri or d.targetUri
     local range = d.range or d.targetSelectionRange
-    table.insert(grouped[uri], { start = range.start, location = d })
+    table.insert(grouped[uri], { start = range.start, ['end'] = range['end'], location = d })
   end
 
   ---@type string[]
@@ -1912,10 +1912,12 @@ function M.locations_to_items(locations, offset_encoding)
       local row = pos.line
       local line = lines[row] or ''
       local col = M._str_byteindex_enc(line, pos.character, offset_encoding)
+      local end_col = M._str_byteindex_enc(line, temp['end'].character, offset_encoding)
       table.insert(items, {
         filename = filename,
         lnum = row + 1,
         col = col + 1,
+        end_col = end_col + 1,
         text = line,
         user_data = temp.location,
       })
